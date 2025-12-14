@@ -5,6 +5,7 @@ import "./Home.css";
 import ExploreItem from "../components/ExploreItem";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { API_BASE, BACKEND_ORIGIN } from "../api/client";
 
 /* ================= HERO IMAGES (imported from assets) ================= */
 import hero1 from "../assets/hero-1.jpg";
@@ -17,6 +18,32 @@ import ad1 from "../assets/ads/ad1.jpg";
 import ad2 from "../assets/ads/ad2.jpg";
 import ad3 from "../assets/ads/ad3.jpg";
 import ad4 from "../assets/ads/ad4.jpg";
+
+// Local fallbacks for categories so images still render if API data is missing or relative
+const categoryImageFallbacks = {
+  Flowers: hero1,
+  Crackers: ad3,
+  Vegetables: hero2,
+  Fruits: hero3,
+  "Milk Products": hero4,
+  Groceries: ad1,
+};
+
+const defaultCategories = [
+  { id: 1, name: "Flowers", icon: "🌸" },
+  { id: 2, name: "Crackers", icon: "🎆" },
+  { id: 3, name: "Vegetables", icon: "🥬" },
+  { id: 4, name: "Fruits", icon: "🍎" },
+  { id: 5, name: "Milk Products", icon: "🥛" },
+  { id: 6, name: "Groceries", icon: "🛒" },
+].map((cat) => ({ ...cat, image: categoryImageFallbacks[cat.name] }));
+
+const resolveCategoryImage = (cat) => {
+  const src = cat?.image;
+  if (src && /^https?:\/\//i.test(src)) return src;
+  if (src) return `${BACKEND_ORIGIN}${src.startsWith("/") ? "" : "/"}${src}`;
+  return categoryImageFallbacks[cat?.name] || null;
+};
 
 export default function Home() {
   const navigate = useNavigate();
@@ -50,7 +77,7 @@ export default function Home() {
 
   async function loadProducts() {
     try {
-      const res = await axios.get("/api/products");
+      const res = await axios.get(`${API_BASE}/products`);
       setProducts(res.data || []);
     } catch (err) {
       console.error("Error loading products:", err);
@@ -93,6 +120,7 @@ export default function Home() {
 
   /* ================= CATEGORIES ================= */
   const [categories, setCategories] = useState([]);
+  const [imageErrors, setImageErrors] = useState({});
 
   useEffect(() => {
     loadCategories();
@@ -100,18 +128,27 @@ export default function Home() {
 
   async function loadCategories() {
     try {
-      const res = await axios.get("/api/categories");
-      setCategories(res.data || []);
+      const res = await axios.get(`${API_BASE}/categories`);
+      const data = res.data || [];
+
+      if (!data.length) {
+        setCategories(defaultCategories);
+        return;
+      }
+
+      setCategories(
+        data.map((cat) => ({
+          ...cat,
+          image: cat.image || categoryImageFallbacks[cat.name] || null,
+        }))
+      );
     } catch {
-      setCategories([
-        { id: 1, name: "Flowers", icon: "🌸" },
-        { id: 2, name: "Crackers", icon: "🎆" },
-        { id: 3, name: "Vegetables", icon: "🥬" },
-        { id: 4, name: "Fruits", icon: "🍎" },
-        { id: 5, name: "Milk Products", icon: "🥛" },
-        { id: 6, name: "Groceries", icon: "🛒" },
-      ]);
+      setCategories(defaultCategories);
     }
+  }
+
+  function handleImageError(id) {
+    setImageErrors((prev) => ({ ...prev, [id]: true }));
   }
 
   function handleCategoryClick(id) {
@@ -196,20 +233,28 @@ export default function Home() {
         <section className="section">
           <h2 className="section-title">Popular Categories</h2>
           <div className="cat-row">
-            {categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="cat-card"
-                onClick={() => handleCategoryClick(cat.id)}
-              >
-                {cat.image ? (
-                  <img src={cat.image} alt={cat.name} className="cat-image" />
-                ) : (
-                  <span className="icon">{cat.icon || "🛍️"}</span>
-                )}
-                <span className="label">{cat.name}</span>
-              </div>
-            ))}
+            {categories.map((cat) => {
+              const imgSrc = !imageErrors[cat.id] ? resolveCategoryImage(cat) : null;
+              return (
+                <div
+                  key={cat.id}
+                  className="cat-card"
+                  onClick={() => handleCategoryClick(cat.id)}
+                >
+                  {imgSrc ? (
+                    <img
+                      src={imgSrc}
+                      alt={cat.name}
+                      className="cat-image"
+                      onError={() => handleImageError(cat.id)}
+                    />
+                  ) : (
+                    <span className="icon">{cat.icon || "🛍️"}</span>
+                  )}
+                  <span className="label">{cat.name}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 

@@ -2,9 +2,19 @@
 // Helper API client functions for frontend
 
 // Default to Vite proxy path in dev so requests go to local backend
-const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_BASE ||
+  '/api';
 
-export { API_BASE };
+// Origin helper for building absolute URLs (e.g., for /uploads/* assets)
+const BACKEND_ORIGIN = (
+  import.meta.env.VITE_BACKEND_ORIGIN ||
+  API_BASE.replace(/\/?api\/?$/, '') ||
+  (import.meta.env.DEV ? 'http://localhost:4000' : '')
+).replace(/\/$/, '');
+
+export { API_BASE, BACKEND_ORIGIN };
 
 export async function get(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint}`;

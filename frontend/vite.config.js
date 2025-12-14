@@ -3,8 +3,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
-  // Required for GitHub Pages subpath
-  base: "/rrnagar-coming-soon/",
+  // Base path is dynamic: Vercel can set VITE_BASE_PATH=/ (default keeps GH Pages subpath)
+  base: process.env.VITE_BASE_PATH || "/rrnagar-coming-soon/",
 
   plugins: [react()],
 

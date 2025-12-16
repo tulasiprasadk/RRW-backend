@@ -1,0 +1,57 @@
+/* CARD */
+.explore-card {
+  background: #ffe84b;
+  padding: 20px;
+  border-radius: 18px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  text-align: center;
+  position: relative;
+  overflow: visible !important;
+  width: 100%;
+  height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ICON */
+.explore-icon {
+  font-size: 32px;
+  margin-bottom: 6px;
+}
+
+/* TITLE */
+.explore-title {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+/* DESCRIPTION */
+.explore-desc {
+  font-size: 14px;
+  color: rgba(0,0,0,0.65);
+}
+
+/* POPUP */
+.explore-popup-portal {
+  transform: translate(-50%, -110%);
+  background: white;
+  padding: 15px;
+  width: 260px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  z-index: 999999999 !important;
+  pointer-events: none;
+}
+
+.popup-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.popup-body {
+  font-size: 14px;
+  line-height: 1.4;
+}

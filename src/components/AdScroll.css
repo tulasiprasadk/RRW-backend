@@ -1,0 +1,49 @@
+/* AdScroll.css
+   Simple, performant continuous horizontal marquee that scrolls right→left.
+   Images should be in /public/ads/ named ad1.jpg, ad2.jpg, etc.
+*/
+
+.ad-scroll-container{
+  width:100%;
+  overflow:hidden;
+  background: linear-gradient(90deg, rgba(255,215,0,0.06), rgba(200,16,46,0.04));
+  padding: 12px 0;
+  box-sizing: border-box;
+}
+
+.ad-track{
+  display:flex;
+  gap:18px;
+  align-items:center;
+  /* animation: move-left 20s linear infinite;  -> we'll reverse direction for right→left */
+  animation: move-right 18s linear infinite;
+  will-change: transform;
+}
+
+/* banner images */
+.ad-banner{
+  width: 320px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  flex: 0 0 auto;
+}
+
+/* slower on small screens */
+@media (max-width: 640px){
+  .ad-banner{ width: 220px; height: 88px; }
+  .ad-track{ gap:12px; animation-duration: 22s; }
+}
+
+/* continuous scroll: duplicate items in the markup (we did in component) */
+@keyframes move-right{
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); } /* because ads are duplicated in the DOM */
+}
+
+/* subtle hover pause */
+.ad-scroll-container:hover .ad-track,
+.ad-track:focus-within{
+  animation-play-state: paused;
+}

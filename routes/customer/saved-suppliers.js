@@ -12,9 +12,7 @@ function requireLogin(req, res, next) {
   next();
 }
 
-/* ======================================
-   GET ALL SAVED SUPPLIERS (from orders)
-====================================== */
+
 router.get("/", requireLogin, async (req, res) => {
   try {
     const customerId = req.session.customerId;

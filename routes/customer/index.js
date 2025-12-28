@@ -1,3 +1,4 @@
+// Importing necessary modules
 import express from "express";
 import auth from "./auth/index.js";
 import address from "./address/index.js";
@@ -17,4 +18,5 @@ router.use('/profile', profile);
 router.use('/saved-suppliers', savedSuppliers);
 router.use('/cart', cart);
 
+// Exporting the router for use in other modules
 export default router;

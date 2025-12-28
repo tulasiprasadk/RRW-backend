@@ -1,5 +1,9 @@
-const express = require('express');
-const passport = require('passport');
+
+import express from "express";
+import passport from "passport";
+import jwt from "jsonwebtoken";
+import customerRoutes from "./customer/index.js";
+
 const router = express.Router();
 
 // Google OAuth routes
@@ -13,8 +17,6 @@ router.get('/auth/google/callback',
     session: true
   }),
   (req, res) => {
-    // Generate JWT token (minimal, for demo; use a real secret in production)
-    const jwt = require('jsonwebtoken');
     const token = jwt.sign(
       { id: req.user.id, email: req.user.email, role: 'user' },
       process.env.JWT_SECRET || 'dev-secret',
@@ -24,7 +26,7 @@ router.get('/auth/google/callback',
   }
 );
 
-// Mount all other customer routes (auth, address, cart, etc.)
-router.use('/', require('./customer'));
+// Mount all other customer routes
+router.use('/', customerRoutes);
 
-module.exports = router;
+export default router;

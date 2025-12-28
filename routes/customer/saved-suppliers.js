@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
+import { Supplier, Order } from "../../models/index.js";
 const router = express.Router();
-const { Supplier } = require("../../models");
 
 /* ======================================
    MIDDLEWARE — Require Login
@@ -56,5 +56,5 @@ router.get("/", requireLogin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;
 

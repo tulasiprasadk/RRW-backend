@@ -1,6 +1,6 @@
-const express = require("express");
+import express from "express";
+import { CartItem, Product, Customer, Category } from "../../models/index.js";
 const router = express.Router();
-const { CartItem, Product, Customer } = require("../../models");
 
 // Middleware to require login
 function requireLogin(req, res, next) {
@@ -20,7 +20,7 @@ router.get("/", requireLogin, async (req, res) => {
           model: Product,
           include: [
             {
-              model: require("../../models").Category,
+              model: Category,
               attributes: ["name"]
             }
           ],
@@ -122,4 +122,4 @@ router.post("/clear", requireLogin, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

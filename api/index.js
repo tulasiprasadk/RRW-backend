@@ -1,3 +1,4 @@
+
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -10,9 +11,7 @@ import passport from "../passport.js";
 
 const app = express();
 
-/* =========================
-   Middleware
-========================= */
+// Middleware
 app.use(
   cors({
     origin: [
@@ -23,30 +22,26 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(bodyParser.json());
-
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true,        // HTTPS on Vercel
-      sameSite: "none",    // REQUIRED for cross-site cookies
+      secure: true,
+      sameSite: "none",
     },
   })
 );
-
 app.use(passport.initialize());
 app.use(passport.session());
 
-/* =========================
-   Routes
-========================= */
+// Routes
 app.use("/api", routes);
 
-/* =========================
-   VERCEL EXPORT (CRITICAL)
-========================= */
-export default app;
+// Vercel handler export
+export { app };
+export default function handler(req, res) {
+  return app(req, res);
+}

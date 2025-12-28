@@ -1,6 +1,5 @@
-// backend/models/CartItem.js
-module.exports = (sequelize, DataTypes) => {
-  const CartItem = sequelize.define('CartItem', {
+const CartItem = (sequelize, DataTypes) => {
+  const CartItemModel = sequelize.define('CartItem', {
     customerId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -22,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       }
     ]
   });
-
-  return CartItem;
+  return CartItemModel;
 };
+
+export default CartItem;

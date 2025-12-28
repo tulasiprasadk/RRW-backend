@@ -1,12 +1,11 @@
-import 'dotenv/config';
+import "dotenv/config";
 import express from "express";
-import serverless from "serverless-http";
 import cors from "cors";
 import bodyParser from "body-parser";
 import session from "express-session";
 
 import routes from "../routes/index.js";
-import "../config/database.js"; // ensure DB connection
+import "../config/database.js";
 import passport from "../passport.js";
 
 const app = express();
@@ -16,22 +15,29 @@ const app = express();
 ========================= */
 app.use(
   cors({
-    origin: "http://localhost:5173", // frontend
+    origin: [
+      "http://localhost:5173",
+      "https://www.rrnagar.com",
+      "https://rrnagar.com"
+    ],
     credentials: true,
   })
 );
 
-
 app.use(bodyParser.json());
-// Session middleware (required for login sessions)
+
 app.use(
   session({
-    secret: "your-secret-key", // TODO: use a strong secret in production!
+    secret: process.env.SESSION_SECRET || "dev-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set to true if using HTTPS
+    cookie: {
+      secure: true,        // HTTPS on Vercel
+      sameSite: "none",    // REQUIRED for cross-site cookies
+    },
   })
 );
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -41,16 +47,6 @@ app.use(passport.session());
 app.use("/api", routes);
 
 /* =========================
-   Serverless export
+   VERCEL EXPORT (CRITICAL)
 ========================= */
-export const handler = serverless(app);
-
-/* =========================
-   Local development server
-========================= */
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Backend listening on http://localhost:${PORT}`);
-  });
-}
+export default app;

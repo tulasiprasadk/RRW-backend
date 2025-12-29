@@ -48,9 +48,8 @@ export const handler = serverless(app);
 /* =========================
    Local development server
 ========================= */
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`Backend listening on http://localhost:${PORT}`);
-  });
-}
+
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Backend listening on http://localhost:${PORT}`);
+});

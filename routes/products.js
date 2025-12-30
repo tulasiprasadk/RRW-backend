@@ -1,5 +1,5 @@
 import express from "express";
-import models from "../config/database.js";
+import { models } from "../config/database.js";
 const { Product, Category } = models;
 import { Op } from "sequelize";
 

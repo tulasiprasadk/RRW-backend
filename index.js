@@ -1,36 +1,49 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import routes from "./routes/index.js";
 import "./config/database.js"; // ensure DB connection
 
 const app = express();
 
-
-// Middleware
+/* =========================
+   CORS CONFIG
+========================= */
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://rrw-frontend.vercel.app",
+  "https://rrw-frontend-bshkgchh2-prasads-projects-1f1a36aa.vercel.app",
+];
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://rrw-frontend.vercel.app",
-      "https://rrw-frontend-bshkgchh2-prasads-projects-1f1a36aa.vercel.app"
-    ],
+    origin: (origin, callback) => {
+      // Allow server-to-server, curl, Postman
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
 
-app.use(bodyParser.json());
+/* =========================
+   MIDDLEWARE
+========================= */
+app.use(express.json());
 
-
-// Routes
-
+/* =========================
+   ROUTES
+========================= */
 app.use("/api", routes);
 
 /* =========================
-   Start server (local)
+   START SERVER
 ========================= */
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
+  console.log(`Backend listening on port ${PORT}`);
 });

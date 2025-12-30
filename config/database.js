@@ -21,10 +21,10 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
 const models = initModels(sequelize);
 
 /**
- * Bootstrap DB connection + sync
- * (sync is OK for now; later we’ll move to migrations)
+ * Non-blocking DB bootstrap
+ * Cloud Run safe: does NOT block startup
  */
-(async () => {
+export async function initDatabase() {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected");
@@ -32,9 +32,9 @@ const models = initModels(sequelize);
     await sequelize.sync();
     console.log("✅ Database synced");
   } catch (err) {
-    console.error("❌ Database error:", err);
-    process.exit(1); // fail fast on DB errors
+    console.error("❌ Database initialization error:", err);
+    // ❌ DO NOT process.exit() on Cloud Run
   }
-})();
+}
 
 export { sequelize, models };

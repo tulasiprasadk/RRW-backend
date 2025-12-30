@@ -1,8 +1,9 @@
 console.log("🔥 INDEX.JS VERSION 2025-12-30");
+
 import express from "express";
 import cors from "cors";
 import routes from "./routes/index.js";
-import "./config/database.js"; // ensure DB connection
+import { initDatabase } from "./config/database.js";
 
 const app = express();
 
@@ -18,8 +19,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow server-to-server, curl, Postman
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // Postman / curl
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
@@ -42,9 +42,15 @@ app.use(express.json());
 app.use("/api", routes);
 
 /* =========================
-   START SERVER
+   START SERVER (FIRST!)
 ========================= */
 const PORT = process.env.PORT || 8080;
+
 app.listen(PORT, () => {
-  console.log(`Backend listening on port ${PORT}`);
+  console.log(`🚀 Backend listening on port ${PORT}`);
 });
+
+/* =========================
+   INIT DATABASE (NON-BLOCKING)
+========================= */
+initDatabase();

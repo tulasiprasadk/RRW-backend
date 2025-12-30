@@ -1,15 +1,27 @@
+import { Sequelize } from "sequelize";
 
-import { Sequelize } from 'sequelize';
-import path from 'path';
-
-const sequelize = new Sequelize('rrnagar_local', 'postgres', 'whatsthepassword', {
-  host: 'localhost',
-  dialect: 'postgres',
+const sequelize = new Sequelize(process.env.DATABASE_URL, {
+  dialect: "postgres",
   logging: false,
-  define: {
-    charset: 'utf8mb4',
-    collate: 'utf8mb4_unicode_ci'
-  }
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+    },
+  },
 });
+
+// 👇 ADD THIS
+(async () => {
+  try {
+    await sequelize.authenticate();
+    console.log("✅ Database connected");
+
+    await sequelize.sync(); // creates tables if missing
+    console.log("✅ Database synced");
+  } catch (err) {
+    console.error("❌ Database error:", err);
+  }
+})();
 
 export default sequelize;

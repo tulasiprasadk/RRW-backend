@@ -1,5 +1,6 @@
 import express from "express";
-import { Product, Category } from "../models/index.js";
+import models from "../models/index.js";
+const { Product, Category } = models;
 import { Op } from "sequelize";
 
 const router = express.Router();

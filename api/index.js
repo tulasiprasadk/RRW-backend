@@ -20,25 +20,7 @@ app.use(
 // Body parser
 app.use(express.json());
 
-// Fast health endpoints (must be before session/routes)
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, env: process.env.NODE_ENV || "development" });
-});
-
-app.get("/health", (req, res) => {
-  res.json({ ok: true });
-});
-
-// Root route
-app.get("/", (req, res) => {
-  res.json({
-    message: "RR Nagar Backend API",
-    version: "1.0.20",
-    status: "running",
-  });
-});
-
-// Session store - use MemoryStore for Vercel (Postgres session store can be added later if needed)
+// Session store
 app.use(
   session({
     name: "rrnagar.sid",
@@ -53,48 +35,46 @@ app.use(
   })
 );
 
-// Deferred route mounting - load routes asynchronously to avoid blocking startup
-let routesMounted = false;
-let routesPromise = null;
+// Health endpoints (must be before routes)
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, env: process.env.NODE_ENV || "development" });
+});
 
-async function mountRoutes() {
-  if (routesMounted) return;
-  if (routesPromise) return routesPromise;
+app.get("/health", (req, res) => {
+  res.json({ ok: true });
+});
 
-  routesPromise = (async () => {
-    try {
-      // Import passport and initialize
-      const passportModule = await import("../backend/passport.js");
-      const passport = passportModule.default || passportModule;
-      app.use(passport.initialize());
-      app.use(passport.session());
+// Root route
+app.get("/", (req, res) => {
+  res.json({
+    message: "RR Nagar Backend API",
+    version: "1.0.22",
+    status: "running",
+  });
+});
 
-      // Import and mount routes
-      const routesModule = await import("../backend/routes/index.js");
-      const routes = routesModule.default || routesModule;
-      app.use("/api", routes);
-      routesMounted = true;
-      console.log("Routes mounted successfully");
-    } catch (e) {
-      console.error("Failed to mount routes:", e.message || e);
-      // App can still serve health endpoints
-    }
-  })();
-
-  return routesPromise;
-}
-
-// Middleware to ensure routes are mounted before handling API requests
-app.use(async (req, res, next) => {
-  // Skip route mounting for health endpoints
-  if (req.path === "/" || req.path === "/health" || req.path === "/api/health") {
-    return next();
+// Initialize passport and routes - static imports with error handling
+// Use IIFE to handle async imports without top-level await
+(async () => {
+  try {
+    const passportModule = await import("../backend/passport.js");
+    const passport = passportModule.default || passportModule;
+    app.use(passport.initialize());
+    app.use(passport.session());
+    console.log("Passport initialized");
+  } catch (err) {
+    console.error("Error initializing passport:", err.message || err);
   }
 
-  // Ensure routes are mounted
-  await mountRoutes();
-  next();
-});
+  try {
+    const routesModule = await import("../backend/routes/index.js");
+    const routes = routesModule.default || routesModule;
+    app.use("/api", routes);
+    console.log("Routes mounted successfully");
+  } catch (err) {
+    console.error("Error mounting routes:", err.message || err);
+  }
+})();
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -107,7 +87,7 @@ app.use((err, req, res, next) => {
   }
 });
 
-// 404 handler
+// 404 handler (must be last)
 app.use((req, res) => {
   res.status(404).json({
     error: "Not found",
@@ -115,5 +95,5 @@ app.use((req, res) => {
   });
 });
 
-// Export Express app for Vercel (no serverless-http needed)
+// Export Express app for Vercel
 export default app;

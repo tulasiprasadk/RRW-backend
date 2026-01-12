@@ -122,8 +122,34 @@ router.post("/verify-email-otp", async (req, res) => {
 /* =====================================================
    CHECK LOGIN STATUS
    GET /api/auth/me
+   GET /api/auth/status (alias for compatibility)
 ===================================================== */
 router.get("/me", async (req, res) => {
+  if (!req.session?.customerId) {
+    return res.status(401).json({ loggedIn: false });
+  }
+
+  try {
+    const customer = await Customer.findByPk(req.session.customerId, {
+      attributes: { exclude: ["otpCode", "otpExpiresAt", "password"] },
+    });
+
+    if (!customer) {
+      return res.status(401).json({ loggedIn: false });
+    }
+
+    res.json({
+      loggedIn: true,
+      user: customer,
+    });
+  } catch (err) {
+    console.error("Customer Auth Check Error:", err);
+    res.status(500).json({ loggedIn: false });
+  }
+});
+
+// Alias for /api/auth/status (frontend compatibility)
+router.get("/status", async (req, res) => {
   if (!req.session?.customerId) {
     return res.status(401).json({ loggedIn: false });
   }

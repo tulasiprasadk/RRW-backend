@@ -126,8 +126,13 @@ app.use(async (req, res, next) => {
     next();
   } catch (error) {
     console.error("Error in route loading middleware:", error);
-    // Don't crash - continue to next middleware
-    next();
+    // Return error response instead of crashing
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: "Internal server error",
+        message: "Failed to load routes"
+      });
+    }
   }
 });
 
@@ -146,10 +151,22 @@ try {
 // Error handling middleware (must be last)
 app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
-  res.status(500).json({
-    error: "Internal server error",
-    message: process.env.NODE_ENV === "development" ? err.message : "An error occurred"
-  });
+  if (!res.headersSent) {
+    res.status(500).json({
+      error: "Internal server error",
+      message: process.env.NODE_ENV === "development" ? err.message : "An error occurred"
+    });
+  }
+});
+
+// Catch-all for unhandled routes
+app.use((req, res) => {
+  if (!res.headersSent) {
+    res.status(404).json({
+      error: "Not found",
+      path: req.path
+    });
+  }
 });
 
 // Export serverless handler for Vercel/AWS Lambda

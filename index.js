@@ -1,3 +1,4 @@
-// Root entrypoint for Vercel project detection
-// Actual serverless function is in api/index.js
+// Root entrypoint for Vercel - re-export from api/index.js
+// This file exists so Vercel can detect the project type
+import express from 'express';
 export { handler } from './api/index.js';

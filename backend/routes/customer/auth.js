@@ -192,7 +192,7 @@ router.get("/google/callback", (req, res, next) => {
     req.session.customerId = req.user.id;
     
     // Redirect to dashboard
-    res.redirect(`${frontendUrl}/dashboard`);
+    return res.redirect(`${frontendUrl}/dashboard`);
   });
 });
 

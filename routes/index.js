@@ -9,6 +9,10 @@ import customers from "./customers.js";
 
 const router = express.Router();
 
+// Health check endpoints
+router.get("/health", (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
 
 router.use("/products", products);
 router.use("/categories", categories);

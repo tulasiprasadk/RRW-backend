@@ -46,7 +46,7 @@ app.use(express.json());
 app.use(
   session({
     name: "rrnagar.sid",
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
     cookie: {

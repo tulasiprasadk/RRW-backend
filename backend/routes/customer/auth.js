@@ -6,6 +6,7 @@
 
 import express from "express";
 import passport from "passport";
+import "../../passport.js";
 import { models } from "../../config/database.js";
 import { sendOTP } from "../../services/emailService.js";
 

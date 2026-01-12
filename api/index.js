@@ -2,15 +2,12 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import session from "express-session";
-
-// Static imports - load everything synchronously
 import passport from "../backend/passport.js";
 import routes from "../backend/routes/index.js";
 
-// Create Express app
 const app = express();
 
-// Trust proxy (required on Vercel)
+// Trust proxy for Vercel
 app.set("trust proxy", 1);
 
 // CORS
@@ -28,7 +25,7 @@ app.use(express.json());
 app.use(
   session({
     name: "rrnagar.sid",
-    secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
+    secret: process.env.SESSION_SECRET || "fallback-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -44,7 +41,7 @@ const passportInstance = passport.default || passport;
 app.use(passportInstance.initialize());
 app.use(passportInstance.session());
 
-// Health endpoints
+// Health check - MUST work
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
@@ -53,16 +50,16 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// Root route
+// Root
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.23",
+    version: "1.0.0",
     status: "running",
   });
 });
 
-// Mount routes at /api
+// Mount routes
 const routesHandler = routes.default || routes;
 app.use("/api", routesHandler);
 
@@ -77,5 +74,4 @@ app.use((req, res) => {
   res.status(404).json({ error: "Not found", path: req.path });
 });
 
-// Export for Vercel
 export default app;

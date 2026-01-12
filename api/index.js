@@ -34,6 +34,11 @@ app.use(
   })
 );
 
+// Health endpoint (must be FIRST, completely synchronous)
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
 // Root route handler
 app.get("/", (req, res) => {
   res.json({
@@ -110,26 +115,32 @@ async function loadPassport() {
   return passportPromise;
 }
 
-// Health endpoint (must be before route loading middleware)
-app.get("/api/health", async (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
-});
-
 // Middleware to ensure routes and passport are loaded before handling requests
+// Skip for health check and root
 app.use(async (req, res, next) => {
-  // Skip route loading for health check
-  if (req.path === "/api/health" || req.path === "/health") {
+  // Skip route loading for health check and root
+  if (req.path === "/api/health" || req.path === "/health" || req.path === "/") {
     return next();
   }
   
   try {
-    // Load passport first (needed for OAuth routes)
+    // Load passport first (needed for OAuth routes) - with timeout
     if (!passportLoaded) {
-      await loadPassport();
+      await Promise.race([
+        loadPassport(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Passport load timeout")), 5000))
+      ]).catch(err => {
+        console.error("Passport load error/timeout:", err.message);
+      });
     }
-    // Then load routes
+    // Then load routes - with timeout
     if (!routesLoaded) {
-      await loadRoutes();
+      await Promise.race([
+        loadRoutes(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Routes load timeout")), 5000))
+      ]).catch(err => {
+        console.error("Routes load error/timeout:", err.message);
+      });
     }
     next();
   } catch (error) {
@@ -144,13 +155,23 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Pre-load routes and passport (non-blocking) - wrapped in try-catch
+// Pre-load routes and passport (non-blocking, with timeout) - wrapped in try-catch
 try {
-  loadRoutes().catch(err => {
-    console.error("Pre-load routes error:", err.message || err);
+  Promise.race([
+    loadRoutes(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000))
+  ]).catch(err => {
+    if (err.message !== "Timeout") {
+      console.error("Pre-load routes error:", err.message || err);
+    }
   });
-  loadPassport().catch(err => {
-    console.error("Pre-load passport error:", err.message || err);
+  Promise.race([
+    loadPassport(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000))
+  ]).catch(err => {
+    if (err.message !== "Timeout") {
+      console.error("Pre-load passport error:", err.message || err);
+    }
   });
 } catch (error) {
   console.error("Error pre-loading modules:", error.message || error);

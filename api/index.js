@@ -3,10 +3,6 @@ import express from "express";
 import cors from "cors";
 import session from "express-session";
 
-// IMPORTANT: static imports only (no dynamic import / lazy loading)
-import routes from "../backend/routes/index.js";
-import passportInstance from "../backend/passport.js";
-
 // Create Express app
 const app = express();
 
@@ -43,28 +39,63 @@ app.use(
   })
 );
 
-// Initialize passport (backend/passport.js exports configured instance)
-const passport = passportInstance.default || passportInstance;
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Root route - must be before /api routes
+// Root route - must be before /api routes (no dependencies)
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.13",
+    version: "1.0.15",
     status: "running",
   });
 });
 
-// Health endpoint
+// Health endpoint (no dependencies)
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// API routes
-const routesHandler = routes.default || routes;
-app.use("/api", routesHandler);
+// Lazy load passport and routes to prevent crashes on import
+let initPromise = null;
+
+async function ensureInitialized() {
+  if (initPromise) {
+    return initPromise;
+  }
+
+  initPromise = (async () => {
+    // Initialize passport
+    try {
+      const passportModule = await import("../backend/passport.js");
+      const passport = passportModule.default || passportModule;
+      app.use(passport.initialize());
+      app.use(passport.session());
+    } catch (err) {
+      console.error("Error loading passport:", err.message || err);
+    }
+
+    // Initialize routes
+    try {
+      const routesModule = await import("../backend/routes/index.js");
+      const routes = routesModule.default || routesModule;
+      app.use("/api", routes);
+    } catch (err) {
+      console.error("Error loading routes:", err.message || err);
+    }
+  })();
+
+  return initPromise;
+}
+
+// Middleware to ensure initialization before handling API requests
+app.use(async (req, res, next) => {
+  // Skip initialization for health and root endpoints
+  if (req.path === "/" || req.path === "/api/health") {
+    return next();
+  }
+
+  // Ensure passport and routes are loaded
+  await ensureInitialized();
+  next();
+});
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -1,6 +1,6 @@
 import express from "express";
-import passport from "../passport.js"; // ✅ MUST use local passport
-import jwt from "jsonwebtoken";
+import passportConfig from "../passport.js";
+import passport from "passport";
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ const router = express.Router();
 ============================================================ */
 router.get(
   "/auth/google",
-  passport.authenticate("customer-google", {
+  passport.authenticate("google-customer", {
     scope: ["profile", "email"],
   })
 );

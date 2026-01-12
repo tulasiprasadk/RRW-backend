@@ -114,14 +114,16 @@ async function loadPassport() {
   return passportPromise;
 }
 
-// Middleware to ensure routes are loaded before handling requests
+// Middleware to ensure routes and passport are loaded before handling requests
 app.use(async (req, res, next) => {
   try {
+    // Load passport first (needed for OAuth routes)
+    if (!passportLoaded) {
+      await loadPassport();
+    }
+    // Then load routes
     if (!routesLoaded) {
       await loadRoutes();
-    }
-    if (!passportLoaded && req.path.startsWith("/api")) {
-      await loadPassport();
     }
     next();
   } catch (error) {
@@ -148,23 +150,23 @@ try {
   console.error("Error pre-loading modules:", error.message || error);
 }
 
-// Error handling middleware (must be last)
-app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  if (!res.headersSent) {
-    res.status(500).json({
-      error: "Internal server error",
-      message: process.env.NODE_ENV === "development" ? err.message : "An error occurred"
-    });
-  }
-});
-
-// Catch-all for unhandled routes
+// Catch-all for unhandled routes (must come before error handler)
 app.use((req, res) => {
   if (!res.headersSent) {
     res.status(404).json({
       error: "Not found",
       path: req.path
+    });
+  }
+});
+
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  if (!res.headersSent) {
+    res.status(err.status || 500).json({
+      error: "Internal server error",
+      message: process.env.NODE_ENV === "development" ? err.message : "An error occurred"
     });
   }
 });

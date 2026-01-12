@@ -59,40 +59,38 @@ app.get("/api/health", (req, res) => {
 let routesLoaded = false;
 let passportLoaded = false;
 
-// Load routes synchronously at module level
-(async () => {
-  try {
-    // Import routes
-    const routesModule = await import("../routes/index.js");
-    const routes = routesModule.default;
-    app.use("/api", routes);
-    routesLoaded = true;
-    console.log("✅ Routes loaded successfully");
-  } catch (err) {
-    console.error("❌ Error loading routes:", err.message || err);
-    // Fallback route
-    app.use("/api", (req, res) => {
-      res.status(503).json({ 
-        error: "Service temporarily unavailable",
-        message: "Routes failed to load. Please check environment variables and database configuration.",
-        detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
-      });
+// Load routes synchronously at module level using top-level await
+try {
+  // Import routes
+  const routesModule = await import("../routes/index.js");
+  const routes = routesModule.default;
+  app.use("/api", routes);
+  routesLoaded = true;
+  console.log("✅ Routes loaded successfully");
+} catch (err) {
+  console.error("❌ Error loading routes:", err.message || err);
+  // Fallback route
+  app.use("/api", (req, res) => {
+    res.status(503).json({ 
+      error: "Service temporarily unavailable",
+      message: "Routes failed to load. Please check environment variables and database configuration.",
+      detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
     });
-  }
+  });
+}
 
-  try {
-    // Import passport
-    const passportModule = await import("../passport.js");
-    const passport = passportModule.default;
-    app.use(passport.initialize());
-    app.use(passport.session());
-    passportLoaded = true;
-    console.log("✅ Passport loaded successfully");
-  } catch (err) {
-    console.error("❌ Error loading passport:", err.message || err);
-    // Continue without passport if it fails
-  }
-})();
+try {
+  // Import passport
+  const passportModule = await import("../passport.js");
+  const passport = passportModule.default;
+  app.use(passport.initialize());
+  app.use(passport.session());
+  passportLoaded = true;
+  console.log("✅ Passport loaded successfully");
+} catch (err) {
+  console.error("❌ Error loading passport:", err.message || err);
+  // Continue without passport if it fails
+}
 
 // Export serverless handler for Vercel/AWS Lambda
 export const handler = serverless(app);

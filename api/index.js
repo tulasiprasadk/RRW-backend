@@ -5,17 +5,16 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import session from "express-session";
 
-import routes from "../routes/index.js";
-import "../config/database.js"; // ensure DB connection
-import passport from "../passport.js";
-
+// Create app
 const app = express();
 
+// CORS configuration
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://rrw-frontend.vercel.app"
+      "https://rrw-frontend.vercel.app",
+      "https://rrnagarfinal-frontend.vercel.app"
     ],
     credentials: true,
   })
@@ -34,14 +33,13 @@ app.use(
     },
   })
 );
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Root route handler
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
     version: "1.0.0",
+    status: "running",
     endpoints: {
       health: "/api/health",
       docs: "See API documentation for available endpoints"
@@ -49,7 +47,43 @@ app.get("/", (req, res) => {
   });
 });
 
-app.use("/api", routes);
+// Health endpoint
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
+// Load routes and passport with error handling
+(async () => {
+  try {
+    // Import routes
+    const routesModule = await import("../routes/index.js");
+    const routes = routesModule.default;
+    
+    // Import passport
+    const passportModule = await import("../passport.js");
+    const passport = passportModule.default;
+    
+    // Initialize passport
+    app.use(passport.initialize());
+    app.use(passport.session());
+    
+    // Mount routes
+    app.use("/api", routes);
+    
+    console.log("✅ Routes and passport loaded successfully");
+  } catch (error) {
+    console.error("❌ Error loading routes/passport:", error.message || error);
+    
+    // Fallback routes
+    app.use("/api", (req, res) => {
+      res.status(503).json({ 
+        error: "Service temporarily unavailable",
+        message: "Routes failed to load. Please check environment variables and database configuration.",
+        detail: process.env.NODE_ENV === "development" ? (error.message || String(error)) : undefined
+      });
+    });
+  }
+})();
 
 // Export serverless handler for Vercel/AWS Lambda
 export const handler = serverless(app);

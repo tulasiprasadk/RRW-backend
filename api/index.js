@@ -45,7 +45,7 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.9",
+    version: "1.0.10",
     status: "running",
   });
 });

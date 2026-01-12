@@ -37,13 +37,27 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Root route handler
+app.get("/", (req, res) => {
+  res.json({
+    message: "RR Nagar Backend API",
+    version: "1.0.0",
+    endpoints: {
+      health: "/api/health",
+      docs: "See API documentation for available endpoints"
+    }
+  });
+});
+
 app.use("/api", routes);
 
-// Only needed for serverless platforms like Vercel/AWS Lambda
-// export const handler = serverless(app);
+// Export serverless handler for Vercel/AWS Lambda
+export const handler = serverless(app);
 
-// Always start the server for Cloud Run
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
-});
+// Start server for non-serverless platforms (Cloud Run, Render, etc.)
+if (process.env.VERCEL !== "1") {
+  const PORT = process.env.PORT || 8080;
+  app.listen(PORT, () => {
+    console.log(`Backend listening on http://localhost:${PORT}`);
+  });
+}

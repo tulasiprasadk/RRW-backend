@@ -47,3 +47,5 @@ coverage/
 # Generated artifacts
 *.tgz
 frontend/public/cache-bust.txt
+.vercel
+.env*.local

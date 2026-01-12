@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "buildCommand": "echo 'Building for Vercel'",
+  "outputDirectory": ".",
   "functions": {
     "api/index.js": {
       "maxDuration": 30
@@ -7,5 +9,6 @@
   },
   "rewrites": [
     { "source": "/(.*)", "destination": "/api/index" }
-  ]
+  ],
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ."
 }

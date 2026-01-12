@@ -2,12 +2,10 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import session from "express-session";
-
 import routes from "../backend/routes/index.js";
-import passportModule from "../backend/passport.js";
-import passport from "passport";
+import passportInstance from "../backend/passport.js";
 
-// Create app
+// Create Express app
 const app = express();
 
 // Trust proxy (required on Vercel)
@@ -25,6 +23,7 @@ app.use(
   })
 );
 
+// Body parser
 app.use(express.json());
 
 // Sessions
@@ -35,33 +34,33 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: true,        // required on Vercel (HTTPS)
+      secure: true,
       httpOnly: true,
-      sameSite: "none",    // required for cross-site cookies
+      sameSite: "none",
     },
   })
 );
 
-// Initialize passport (passport.js exports the configured passport instance)
-const passportInstance = passportModule.default || passportModule;
-app.use(passportInstance.initialize());
-app.use(passportInstance.session());
+// Initialize passport
+const passport = passportInstance.default || passportInstance;
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Root route - must be before /api routes
+app.get("/", (req, res) => {
+  res.json({
+    message: "RR Nagar Backend API",
+    version: "1.0.7",
+    status: "running",
+  });
+});
 
 // Health endpoint
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Root route
-app.get("/", (req, res) => {
-  res.json({
-    message: "RR Nagar Backend API",
-    version: "1.0.6",
-    status: "running",
-  });
-});
-
-// Routes
+// API routes
 app.use("/api", routes);
 
 // Error handler
@@ -82,5 +81,5 @@ app.use((req, res) => {
   });
 });
 
-// 🔑 THIS is what Vercel needs
+// Export Express app for Vercel
 export default app;

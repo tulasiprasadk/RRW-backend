@@ -116,18 +116,41 @@ async function loadPassport() {
 
 // Middleware to ensure routes are loaded before handling requests
 app.use(async (req, res, next) => {
-  if (!routesLoaded) {
-    await loadRoutes();
+  try {
+    if (!routesLoaded) {
+      await loadRoutes();
+    }
+    if (!passportLoaded && req.path.startsWith("/api")) {
+      await loadPassport();
+    }
+    next();
+  } catch (error) {
+    console.error("Error in route loading middleware:", error);
+    // Don't crash - continue to next middleware
+    next();
   }
-  if (!passportLoaded && req.path.startsWith("/api")) {
-    await loadPassport();
-  }
-  next();
 });
 
-// Pre-load routes and passport (non-blocking)
-loadRoutes().catch(console.error);
-loadPassport().catch(console.error);
+// Pre-load routes and passport (non-blocking) - wrapped in try-catch
+try {
+  loadRoutes().catch(err => {
+    console.error("Pre-load routes error:", err.message || err);
+  });
+  loadPassport().catch(err => {
+    console.error("Pre-load passport error:", err.message || err);
+  });
+} catch (error) {
+  console.error("Error pre-loading modules:", error.message || error);
+}
+
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({
+    error: "Internal server error",
+    message: process.env.NODE_ENV === "development" ? err.message : "An error occurred"
+  });
+});
 
 // Export serverless handler for Vercel/AWS Lambda
 export const handler = serverless(app);

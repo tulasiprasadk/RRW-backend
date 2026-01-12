@@ -38,13 +38,16 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.3",
+    version: "1.0.4",
     status: "running",
-    buildDate: "2026-01-12T12:05:00Z",
-    deployment: "New deployment triggered - visible in dashboard",
-    commit: "74444550",
+    buildDate: "2026-01-12T12:15:00Z",
+    deployment: "Routes fixed - top-level await implementation",
+    commit: "00a76b3a",
+    routesStatus: "Routes loaded with top-level await",
     endpoints: {
       health: "/api/health",
+      categories: "/api/categories",
+      products: "/api/products",
       docs: "See API documentation for available endpoints"
     }
   });

@@ -1,12 +1,12 @@
 {
   "version": 2,
   "functions": {
-    "api/index.js": {
+    "backend/api/index.js": {
       "maxDuration": 30
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index" }
+    { "source": "/(.*)", "destination": "/backend/api/index" }
   ],
   "cleanUrls": true
 }

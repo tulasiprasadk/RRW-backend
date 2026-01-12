@@ -43,7 +43,7 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.11",
+    version: "1.0.12",
     status: "running",
   });
 });
@@ -54,45 +54,46 @@ app.get("/api/health", (req, res) => {
 });
 
 // Lazy load passport and routes to prevent crashes on import
-let passportInitialized = false;
-let routesInitialized = false;
-let passportModule = null;
-let routesModule = null;
+let initializationPromise = null;
 
-// Middleware to lazy-load passport and routes on first request
+async function initializeApp() {
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+
+  initializationPromise = (async () => {
+    // Initialize passport
+    try {
+      const passportModule = await import("../backend/passport.js");
+      const passport = passportModule.default || passportModule;
+      app.use(passport.initialize());
+      app.use(passport.session());
+    } catch (err) {
+      console.error("Error loading passport:", err.message || err);
+    }
+
+    // Initialize routes
+    try {
+      const routesModule = await import("../backend/routes/index.js");
+      const routes = routesModule.default || routesModule;
+      app.use("/api", routes);
+    } catch (err) {
+      console.error("Error loading routes:", err.message || err);
+    }
+  })();
+
+  return initializationPromise;
+}
+
+// Middleware to ensure initialization before handling requests
 app.use(async (req, res, next) => {
-  // Skip lazy loading for health and root endpoints
+  // Skip initialization for health and root endpoints
   if (req.path === "/" || req.path === "/api/health") {
     return next();
   }
 
-  // Initialize passport on first request
-  if (!passportInitialized) {
-    try {
-      passportModule = await import("../backend/passport.js");
-      const passport = passportModule.default || passportModule;
-      app.use(passport.initialize());
-      app.use(passport.session());
-      passportInitialized = true;
-    } catch (err) {
-      console.error("Error loading passport:", err.message || err);
-      // Continue without passport
-    }
-  }
-
-  // Initialize routes on first request
-  if (!routesInitialized) {
-    try {
-      routesModule = await import("../backend/routes/index.js");
-      const routes = routesModule.default || routesModule;
-      app.use("/api", routes);
-      routesInitialized = true;
-    } catch (err) {
-      console.error("Error loading routes:", err.message || err);
-      // Continue without routes
-    }
-  }
-
+  // Ensure passport and routes are loaded
+  await initializeApp();
   next();
 });
 

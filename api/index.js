@@ -58,42 +58,76 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Load routes and passport - use top-level await for serverless compatibility
+// Load routes and passport - use lazy loading for serverless compatibility
+let routesPromise = null;
+let passportPromise = null;
 let routesLoaded = false;
 let passportLoaded = false;
 
-// Load routes synchronously at module level using top-level await
-try {
-  // Import routes
-  const routesModule = await import("../routes/index.js");
-  const routes = routesModule.default;
-  app.use("/api", routes);
-  routesLoaded = true;
-  console.log("✅ Routes loaded successfully");
-} catch (err) {
-  console.error("❌ Error loading routes:", err.message || err);
-  // Fallback route
-  app.use("/api", (req, res) => {
-    res.status(503).json({ 
-      error: "Service temporarily unavailable",
-      message: "Routes failed to load. Please check environment variables and database configuration.",
-      detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
-    });
-  });
+// Lazy load routes on first request
+async function loadRoutes() {
+  if (routesLoaded) return;
+  if (routesPromise) return routesPromise;
+  
+  routesPromise = (async () => {
+    try {
+      const routesModule = await import("../routes/index.js");
+      const routes = routesModule.default;
+      app.use("/api", routes);
+      routesLoaded = true;
+      console.log("✅ Routes loaded successfully");
+    } catch (err) {
+      console.error("❌ Error loading routes:", err.message || err);
+      // Fallback route
+      app.use("/api", (req, res) => {
+        res.status(503).json({ 
+          error: "Service temporarily unavailable",
+          message: "Routes failed to load. Please check environment variables and database configuration.",
+          detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
+        });
+      });
+    }
+  })();
+  
+  return routesPromise;
 }
 
-try {
-  // Import passport
-  const passportModule = await import("../passport.js");
-  const passport = passportModule.default;
-  app.use(passport.initialize());
-  app.use(passport.session());
-  passportLoaded = true;
-  console.log("✅ Passport loaded successfully");
-} catch (err) {
-  console.error("❌ Error loading passport:", err.message || err);
-  // Continue without passport if it fails
+// Lazy load passport on first request
+async function loadPassport() {
+  if (passportLoaded) return;
+  if (passportPromise) return passportPromise;
+  
+  passportPromise = (async () => {
+    try {
+      const passportModule = await import("../passport.js");
+      const passport = passportModule.default;
+      app.use(passport.initialize());
+      app.use(passport.session());
+      passportLoaded = true;
+      console.log("✅ Passport loaded successfully");
+    } catch (err) {
+      console.error("❌ Error loading passport:", err.message || err);
+      // Continue without passport if it fails
+    }
+  })();
+  
+  return passportPromise;
 }
+
+// Middleware to ensure routes are loaded before handling requests
+app.use(async (req, res, next) => {
+  if (!routesLoaded) {
+    await loadRoutes();
+  }
+  if (!passportLoaded && req.path.startsWith("/api")) {
+    await loadPassport();
+  }
+  next();
+});
+
+// Pre-load routes and passport (non-blocking)
+loadRoutes().catch(console.error);
+loadPassport().catch(console.error);
 
 // Export serverless handler for Vercel/AWS Lambda
 export const handler = serverless(app);

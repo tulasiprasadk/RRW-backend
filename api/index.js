@@ -55,51 +55,44 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Load routes and passport - use synchronous imports with error handling
-try {
-  // Import routes
-  import("../routes/index.js")
-    .then((routesModule) => {
-      const routes = routesModule.default;
-      app.use("/api", routes);
-      console.log("✅ Routes loaded successfully");
-    })
-    .catch((err) => {
-      console.error("❌ Error loading routes:", err.message || err);
-      // Fallback route
-      app.use("/api", (req, res) => {
-        res.status(503).json({ 
-          error: "Service temporarily unavailable",
-          message: "Routes failed to load. Please check environment variables and database configuration.",
-          detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
-        });
+// Load routes and passport - use top-level await for serverless compatibility
+let routesLoaded = false;
+let passportLoaded = false;
+
+// Load routes synchronously at module level
+(async () => {
+  try {
+    // Import routes
+    const routesModule = await import("../routes/index.js");
+    const routes = routesModule.default;
+    app.use("/api", routes);
+    routesLoaded = true;
+    console.log("✅ Routes loaded successfully");
+  } catch (err) {
+    console.error("❌ Error loading routes:", err.message || err);
+    // Fallback route
+    app.use("/api", (req, res) => {
+      res.status(503).json({ 
+        error: "Service temporarily unavailable",
+        message: "Routes failed to load. Please check environment variables and database configuration.",
+        detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
       });
     });
+  }
 
-  // Import passport
-  import("../passport.js")
-    .then((passportModule) => {
-      const passport = passportModule.default;
-      app.use(passport.initialize());
-      app.use(passport.session());
-      console.log("✅ Passport loaded successfully");
-    })
-    .catch((err) => {
-      console.error("❌ Error loading passport:", err.message || err);
-      // Continue without passport if it fails
-    });
-} catch (error) {
-  console.error("❌ Error during import setup:", error.message || error);
-  
-  // Fallback route
-  app.use("/api", (req, res) => {
-    res.status(503).json({ 
-      error: "Service temporarily unavailable",
-      message: "Failed to initialize routes. Please check server logs.",
-      detail: process.env.NODE_ENV === "development" ? (error.message || String(error)) : undefined
-    });
-  });
-}
+  try {
+    // Import passport
+    const passportModule = await import("../passport.js");
+    const passport = passportModule.default;
+    app.use(passport.initialize());
+    app.use(passport.session());
+    passportLoaded = true;
+    console.log("✅ Passport loaded successfully");
+  } catch (err) {
+    console.error("❌ Error loading passport:", err.message || err);
+    // Continue without passport if it fails
+  }
+})();
 
 // Export serverless handler for Vercel/AWS Lambda
 export const handler = serverless(app);

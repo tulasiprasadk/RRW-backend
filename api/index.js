@@ -38,12 +38,12 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.4",
+    version: "1.0.5",
     status: "running",
-    buildDate: "2026-01-12T12:15:00Z",
-    deployment: "Routes fixed - top-level await implementation",
-    commit: "00a76b3a",
-    routesStatus: "Routes loaded with top-level await",
+    buildDate: "2026-01-12T12:35:00Z",
+    deployment: "Package-lock.json regenerated - lazy route loading",
+    commit: "0f857638",
+    routesStatus: "Routes loaded with lazy loading (serverless compatible)",
     endpoints: {
       health: "/api/health",
       categories: "/api/categories",

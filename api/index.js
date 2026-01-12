@@ -53,11 +53,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// Health endpoint
-app.get("/api/health", (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() });
-});
-
 // Load routes and passport - use lazy loading for serverless compatibility
 let routesPromise = null;
 let passportPromise = null;
@@ -115,8 +110,18 @@ async function loadPassport() {
   return passportPromise;
 }
 
+// Health endpoint (must be before route loading middleware)
+app.get("/api/health", async (req, res) => {
+  res.json({ ok: true, timestamp: new Date().toISOString() });
+});
+
 // Middleware to ensure routes and passport are loaded before handling requests
 app.use(async (req, res, next) => {
+  // Skip route loading for health check
+  if (req.path === "/api/health" || req.path === "/health") {
+    return next();
+  }
+  
   try {
     // Load passport first (needed for OAuth routes)
     if (!passportLoaded) {
@@ -152,8 +157,9 @@ try {
 }
 
 // Catch-all for unhandled routes (must come before error handler)
+// Only catch if routes are loaded and no response sent
 app.use((req, res) => {
-  if (!res.headersSent) {
+  if (!res.headersSent && routesLoaded) {
     res.status(404).json({
       error: "Not found",
       path: req.path

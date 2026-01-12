@@ -43,7 +43,7 @@ app.use(
 );
 
 // Initialize passport (passport.js exports the configured passport instance)
-const passportInstance = passportConfig.default || passportConfig;
+const passportInstance = passportModule.default || passportModule;
 app.use(passportInstance.initialize());
 app.use(passportInstance.session());
 

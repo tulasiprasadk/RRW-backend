@@ -2,8 +2,6 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import session from "express-session";
-import routes from "../backend/routes/index.js";
-import passportInstance from "../backend/passport.js";
 
 // Create Express app
 const app = express();
@@ -45,7 +43,7 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.10",
+    version: "1.0.11",
     status: "running",
   });
 });
@@ -55,22 +53,48 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Initialize passport with error handling
-try {
-  const passport = passportInstance.default || passportInstance;
-  app.use(passport.initialize());
-  app.use(passport.session());
-} catch (err) {
-  console.error("Error initializing passport:", err.message || err);
-}
+// Lazy load passport and routes to prevent crashes on import
+let passportInitialized = false;
+let routesInitialized = false;
+let passportModule = null;
+let routesModule = null;
 
-// API routes
-try {
-  const routesHandler = routes.default || routes;
-  app.use("/api", routesHandler);
-} catch (err) {
-  console.error("Error mounting routes:", err.message || err);
-}
+// Middleware to lazy-load passport and routes on first request
+app.use(async (req, res, next) => {
+  // Skip lazy loading for health and root endpoints
+  if (req.path === "/" || req.path === "/api/health") {
+    return next();
+  }
+
+  // Initialize passport on first request
+  if (!passportInitialized) {
+    try {
+      passportModule = await import("../backend/passport.js");
+      const passport = passportModule.default || passportModule;
+      app.use(passport.initialize());
+      app.use(passport.session());
+      passportInitialized = true;
+    } catch (err) {
+      console.error("Error loading passport:", err.message || err);
+      // Continue without passport
+    }
+  }
+
+  // Initialize routes on first request
+  if (!routesInitialized) {
+    try {
+      routesModule = await import("../backend/routes/index.js");
+      const routes = routesModule.default || routesModule;
+      app.use("/api", routes);
+      routesInitialized = true;
+    } catch (err) {
+      console.error("Error loading routes:", err.message || err);
+      // Continue without routes
+    }
+  }
+
+  next();
+});
 
 // Error handler
 app.use((err, req, res, next) => {

@@ -162,15 +162,9 @@ router.post("/logout", (req, res) => {
    GET /api/customer/auth/google
 ===================================================== */
 router.get("/google", (req, res, next) => {
-  try {
-    passport.authenticate("customer-google", {
-      scope: ["profile", "email"],
-    })(req, res, next);
-  } catch (err) {
-    console.error("Google OAuth initiation error:", err);
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    res.redirect(`${frontendUrl}/login?error=google_init_failed`);
-  }
+  passport.authenticate("customer-google", {
+    scope: ["profile", "email"],
+  })(req, res, next);
 });
 
 /* =====================================================

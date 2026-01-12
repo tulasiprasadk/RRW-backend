@@ -148,29 +148,12 @@ router.get("/me", async (req, res) => {
   }
 });
 
-// Alias for /api/auth/status (frontend compatibility)
-router.get("/status", async (req, res) => {
-  if (!req.session?.customerId) {
-    return res.status(401).json({ loggedIn: false });
-  }
-
-  try {
-    const customer = await Customer.findByPk(req.session.customerId, {
-      attributes: { exclude: ["otpCode", "otpExpiresAt", "password"] },
-    });
-
-    if (!customer) {
-      return res.status(401).json({ loggedIn: false });
-    }
-
-    res.json({
-      loggedIn: true,
-      user: customer,
-    });
-  } catch (err) {
-    console.error("Customer Auth Check Error:", err);
-    res.status(500).json({ loggedIn: false });
-  }
+// Auth status endpoint (frontend compatibility)
+// Returns Google OAuth configuration status
+router.get("/status", (req, res) => {
+  res.json({
+    googleConfigured: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+  });
 });
 
 /* =====================================================

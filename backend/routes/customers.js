@@ -6,14 +6,26 @@ const router = express.Router();
 /* ============================================================
    GOOGLE OAUTH — CUSTOMER
    GET /api/customers/auth/google
+   This route MUST redirect immediately to Google - no DB calls
 ============================================================ */
 router.get(
   "/auth/google",
   (req, res, next) => {
-    const passportInstance = passport.default || passport;
-    passportInstance.authenticate("google-customer", {
-      scope: ["profile", "email"],
-    })(req, res, next);
+    try {
+      const passportInstance = passport.default || passport;
+      if (!passportInstance) {
+        console.error("Passport not initialized");
+        return res.status(500).json({ error: "OAuth not configured" });
+      }
+      
+      // This should redirect immediately to Google - no waiting
+      passportInstance.authenticate("google-customer", {
+        scope: ["profile", "email"],
+      })(req, res, next);
+    } catch (err) {
+      console.error("Error in Google OAuth route:", err);
+      res.status(500).json({ error: "OAuth error", message: err.message });
+    }
   }
 );
 

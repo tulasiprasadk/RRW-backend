@@ -170,7 +170,8 @@ app.use((req, res) => {
 });
 
 // Export serverless handler for Vercel/AWS Lambda
-export const handler = serverless(app);
+const handler = serverless(app);
+export default handler;
 
 // Start server for non-serverless platforms (Cloud Run, Render, etc.)
 if (process.env.VERCEL !== "1") {

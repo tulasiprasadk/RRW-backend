@@ -78,11 +78,12 @@ async function loadRoutes() {
       console.log("✅ Routes loaded successfully");
     } catch (err) {
       console.error("❌ Error loading routes:", err.message || err);
+      console.error("❌ Error stack:", err.stack);
       // Fallback route
       app.use("/api", (req, res) => {
         res.status(503).json({ 
           error: "Service temporarily unavailable",
-          message: "Routes failed to load. Please check environment variables and database configuration.",
+          message: "Routes failed to load. Check environment variables and database configuration.",
           detail: process.env.NODE_ENV === "development" ? (err.message || String(err)) : undefined
         });
       });

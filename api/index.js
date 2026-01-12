@@ -34,7 +34,7 @@ app.use(
   })
 );
 
-// Health endpoint - MUST be synchronous, no async operations
+// Health endpoint - MUST be first, completely synchronous, no middleware
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
@@ -102,14 +102,14 @@ async function loadRoutes() {
   return routesPromise;
 }
 
-// Middleware - load routes/passport on demand (non-blocking)
+// Middleware - ONLY for non-health routes, with minimal wait
 app.use(async (req, res, next) => {
-  // Skip for health and root
+  // Health and root already handled above, skip middleware
   if (req.path === "/api/health" || req.path === "/") {
     return next();
   }
   
-  // Load passport and routes in parallel, don't wait
+  // Start loading immediately (fire and forget)
   if (!passportLoaded) {
     loadPassport().catch(() => {});
   }
@@ -117,15 +117,15 @@ app.use(async (req, res, next) => {
     loadRoutes().catch(() => {});
   }
   
-  // Wait briefly for routes to load (with timeout)
-  if (!routesLoaded) {
+  // Wait max 300ms for routes - if not ready, continue anyway
+  if (!routesLoaded && routesPromise) {
     try {
       await Promise.race([
-        loadRoutes(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 2000))
+        routesPromise,
+        new Promise((resolve) => setTimeout(resolve, 300))
       ]);
     } catch (err) {
-      // Continue even if timeout
+      // Ignore errors, continue
     }
   }
   

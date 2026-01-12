@@ -41,27 +41,36 @@ app.use(
   })
 );
 
-// Initialize passport
-const passport = passportInstance.default || passportInstance;
-app.use(passport.initialize());
-app.use(passport.session());
-
-// Root route - must be before /api routes
+// Root route - must be before /api routes (no dependencies)
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.7",
+    version: "1.0.9",
     status: "running",
   });
 });
 
-// Health endpoint
+// Health endpoint (no dependencies)
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
+// Initialize passport with error handling
+try {
+  const passport = passportInstance.default || passportInstance;
+  app.use(passport.initialize());
+  app.use(passport.session());
+} catch (err) {
+  console.error("Error initializing passport:", err.message || err);
+}
+
 // API routes
-app.use("/api", routes);
+try {
+  const routesHandler = routes.default || routes;
+  app.use("/api", routesHandler);
+} catch (err) {
+  console.error("Error mounting routes:", err.message || err);
+}
 
 // Error handler
 app.use((err, req, res, next) => {

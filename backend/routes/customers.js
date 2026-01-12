@@ -10,9 +10,12 @@ const router = express.Router();
 ============================================================ */
 router.get(
   "/auth/google",
-  passport.authenticate("google-customer", {
-    scope: ["profile", "email"],
-  })
+  (req, res, next) => {
+    const passportInstance = passportConfig.default || passportConfig;
+    passportInstance.authenticate("google-customer", {
+      scope: ["profile", "email"],
+    })(req, res, next);
+  }
 );
 
 /* ============================================================
@@ -21,33 +24,30 @@ router.get(
 ============================================================ */
 router.get(
   "/auth/google/callback",
-  passport.authenticate("customer-google", {
-    failureRedirect: "/login",
-    session: true,
-  }),
-  (req, res) => {
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      return res.status(500).send("FRONTEND_URL not configured");
-    }
-
-    if (!req.user) {
-      return res.status(500).send("Customer not found after OAuth");
-    }
-
-    const token = jwt.sign(
-      {
-        id: req.user.id,
-        email: req.user.email,
-        role: "customer",
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
-    return res.redirect(
-      `${frontendUrl}/oauth-success?token=${token}&role=customer`
-    );
+  (req, res, next) => {
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const passportInstance = passportConfig.default || passportConfig;
+    
+    passportInstance.authenticate("google-customer", {
+      failureRedirect: `${frontendUrl}/login?error=google_failed`,
+      session: true,
+    })(req, res, (err) => {
+      if (err) {
+        console.error("Google OAuth callback error:", err);
+        return res.redirect(`${frontendUrl}/login?error=google_failed`);
+      }
+      
+      if (!req.user) {
+        console.error("No user after Google OAuth");
+        return res.redirect(`${frontendUrl}/login?error=google_failed`);
+      }
+      
+      // Save customer in session
+      req.session.customerId = req.user.id;
+      
+      // Redirect to dashboard
+      return res.redirect(`${frontendUrl}/dashboard`);
+    });
   }
 );
 

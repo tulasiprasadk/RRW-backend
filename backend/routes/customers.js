@@ -13,9 +13,20 @@ router.get(
   (req, res, next) => {
     try {
       const passportInstance = passport.default || passport;
+      
+      // Check if Google OAuth is configured
+      if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+        return res.status(400).json({ 
+          error: "Google OAuth not configured",
+          message: "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set"
+        });
+      }
+      
       if (!passportInstance) {
-        console.error("Passport not initialized");
-        return res.status(500).json({ error: "OAuth not configured" });
+        return res.status(500).json({ 
+          error: "OAuth not initialized",
+          message: "Passport instance not available"
+        });
       }
       
       // This should redirect immediately to Google - no waiting
@@ -24,7 +35,10 @@ router.get(
       })(req, res, next);
     } catch (err) {
       console.error("Error in Google OAuth route:", err);
-      res.status(500).json({ error: "OAuth error", message: err.message });
+      res.status(500).json({ 
+        error: "OAuth error", 
+        message: err.message || "Failed to initiate Google OAuth"
+      });
     }
   }
 );

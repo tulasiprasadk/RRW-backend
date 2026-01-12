@@ -3,6 +3,11 @@ import express from "express";
 import cors from "cors";
 import session from "express-session";
 
+// Static imports - use regular import statements (not await import)
+// Wrap in try-catch at module level is not possible, so we'll handle errors during initialization
+import passportInstance from "../backend/passport.js";
+import routes from "../backend/routes/index.js";
+
 // Create Express app
 const app = express();
 
@@ -39,63 +44,36 @@ app.use(
   })
 );
 
-// Root route - must be before /api routes (no dependencies)
+// Initialize passport BEFORE routes
+try {
+  const passport = passportInstance.default || passportInstance;
+  app.use(passport.initialize());
+  app.use(passport.session());
+} catch (err) {
+  console.error("Error initializing passport:", err.message || err);
+}
+
+// Root route - guaranteed safe endpoint
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.15",
+    version: "1.0.18",
     status: "running",
   });
 });
 
-// Health endpoint (no dependencies)
+// Health endpoint - guaranteed safe endpoint
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, timestamp: new Date().toISOString() });
 });
 
-// Lazy load passport and routes to prevent crashes on import
-let initPromise = null;
-
-async function ensureInitialized() {
-  if (initPromise) {
-    return initPromise;
-  }
-
-  initPromise = (async () => {
-    // Initialize passport
-    try {
-      const passportModule = await import("../backend/passport.js");
-      const passport = passportModule.default || passportModule;
-      app.use(passport.initialize());
-      app.use(passport.session());
-    } catch (err) {
-      console.error("Error loading passport:", err.message || err);
-    }
-
-    // Initialize routes
-    try {
-      const routesModule = await import("../backend/routes/index.js");
-      const routes = routesModule.default || routesModule;
-      app.use("/api", routes);
-    } catch (err) {
-      console.error("Error loading routes:", err.message || err);
-    }
-  })();
-
-  return initPromise;
+// Mount routes at /api
+try {
+  const routesHandler = routes.default || routes;
+  app.use("/api", routesHandler);
+} catch (err) {
+  console.error("Error mounting routes:", err.message || err);
 }
-
-// Middleware to ensure initialization before handling API requests
-app.use(async (req, res, next) => {
-  // Skip initialization for health and root endpoints
-  if (req.path === "/" || req.path === "/api/health") {
-    return next();
-  }
-
-  // Ensure passport and routes are loaded
-  await ensureInitialized();
-  next();
-});
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -103,6 +81,7 @@ app.use((err, req, res, next) => {
   if (!res.headersSent) {
     res.status(500).json({
       error: "Internal server error",
+      message: err.message || "Unknown error",
     });
   }
 });

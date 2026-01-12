@@ -33,14 +33,14 @@ app.get("/health", (req, res) => {
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.19",
+    version: "1.0.20",
     status: "running",
   });
 });
 
-// Session store (best-effort, fallback to MemoryStore)
-try {
-  const sessionOptions = {
+// Session store - use MemoryStore for Vercel (Postgres session store can be added later if needed)
+app.use(
+  session({
     name: "rrnagar.sid",
     secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
     resave: false,
@@ -50,43 +50,8 @@ try {
       httpOnly: true,
       sameSite: "none",
     },
-  };
-
-  // Try to use Postgres session store if DATABASE_URL is available
-  if (process.env.DATABASE_URL) {
-    try {
-      const pg = await import("pg");
-      const ConnectPgSimple = (await import("connect-pg-simple")).default;
-      const Pool = pg.Pool || pg.default?.Pool;
-      
-      if (Pool) {
-        const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-        const PgSession = ConnectPgSimple(session);
-        sessionOptions.store = new PgSession({ pool, tableName: "session" });
-        console.log("Using Postgres session store");
-      }
-    } catch (e) {
-      console.error("Postgres session store init failed, using MemoryStore:", e.message || e);
-    }
-  }
-
-  app.use(session(sessionOptions));
-} catch (e) {
-  console.error("Session init failed, using basic session:", e.message || e);
-  app.use(
-    session({
-      name: "rrnagar.sid",
-      secret: process.env.SESSION_SECRET || "fallback-secret-change-in-production",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: true,
-        httpOnly: true,
-        sameSite: "none",
-      },
-    })
-  );
-}
+  })
+);
 
 // Deferred route mounting - load routes asynchronously to avoid blocking startup
 let routesMounted = false;

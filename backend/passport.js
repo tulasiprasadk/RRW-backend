@@ -57,7 +57,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use('google-customer', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CUSTOMER_CALLBACK_URL || 'https://rrnagarfinal-backend.vercel.app/api/customer/auth/google/callback',
+    callbackURL: process.env.GOOGLE_CUSTOMER_CALLBACK_URL || 'https://rrnagarfinal-backend.vercel.app/api/customers/auth/google/callback',
   }, async (accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails[0].value;

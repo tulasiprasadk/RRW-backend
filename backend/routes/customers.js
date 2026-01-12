@@ -1,6 +1,5 @@
 import express from "express";
-import passportConfig from "../passport.js";
-import passport from "passport";
+import passport from "../passport.js";
 
 const router = express.Router();
 
@@ -11,7 +10,7 @@ const router = express.Router();
 router.get(
   "/auth/google",
   (req, res, next) => {
-    const passportInstance = passportConfig.default || passportConfig;
+    const passportInstance = passport.default || passport;
     passportInstance.authenticate("google-customer", {
       scope: ["profile", "email"],
     })(req, res, next);
@@ -26,7 +25,7 @@ router.get(
   "/auth/google/callback",
   (req, res, next) => {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
-    const passportInstance = passportConfig.default || passportConfig;
+    const passportInstance = passport.default || passport;
     
     passportInstance.authenticate("google-customer", {
       failureRedirect: `${frontendUrl}/login?error=google_failed`,

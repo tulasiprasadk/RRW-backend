@@ -5,7 +5,7 @@
  */
 
 import express from "express";
-import passport from "../../passport.js";
+import passport from "passport";
 import { models } from "../../config/database.js";
 import { sendOTP } from "../../services/emailService.js";
 
@@ -162,7 +162,7 @@ router.post("/logout", (req, res) => {
    GET /api/customer/auth/google
 ===================================================== */
 router.get("/google", (req, res, next) => {
-  passport.authenticate("customer-google", {
+  passport.authenticate("google-customer", {
     scope: ["profile", "email"],
   })(req, res, next);
 });
@@ -174,7 +174,7 @@ router.get("/google", (req, res, next) => {
 router.get("/google/callback", (req, res, next) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   
-  passport.authenticate("customer-google", {
+  passport.authenticate("google-customer", {
     failureRedirect: `${frontendUrl}/login?error=google_failed`,
     session: true,
   })(req, res, (err) => {

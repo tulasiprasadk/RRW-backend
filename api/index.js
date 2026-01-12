@@ -38,9 +38,10 @@ app.use(
 app.get("/", (req, res) => {
   res.json({
     message: "RR Nagar Backend API",
-    version: "1.0.1",
+    version: "1.0.2",
     status: "running",
-    buildDate: "2026-01-12T11:50:00Z",
+    buildDate: "2026-01-12T11:55:00Z",
+    deployment: "Latest changes deployed",
     endpoints: {
       health: "/api/health",
       docs: "See API documentation for available endpoints"

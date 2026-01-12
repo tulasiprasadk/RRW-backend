@@ -71,7 +71,7 @@ async function loadRoutes() {
   
   routesPromise = (async () => {
     try {
-      const routesModule = await import("../../backend/routes/index.js");
+      const routesModule = await import("../backend/routes/index.js");
       const routes = routesModule.default;
       app.use("/api", routes);
       routesLoaded = true;
@@ -99,7 +99,7 @@ async function loadPassport() {
   
   passportPromise = (async () => {
     try {
-      const passportModule = await import("../../backend/passport.js");
+      const passportModule = await import("../backend/passport.js");
       const passport = passportModule.default;
       app.use(passport.initialize());
       app.use(passport.session());
